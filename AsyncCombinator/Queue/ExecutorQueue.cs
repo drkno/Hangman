@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace AsyncCombinator.Queue
 {
-    public class ExecutorQueue<T>
+    public class ExecutorQueue<T> : IEnumerable<ExecutorQueue<T>.ExecutorQueueItem>
     {
         private readonly ConcurrentQueue<ExecutorQueueItem> _backlogQueue;
         private readonly ConcurrentDictionary<BigInteger, ExecutorQueueItem> _progressQueue;
@@ -40,13 +42,14 @@ namespace AsyncCombinator.Queue
             UpdateProgressQueue();
         }
 
-        public void MarkComplete(BigInteger queueId)
+        public ExecutorQueueItem MarkComplete(BigInteger queueId)
         {
-            if (!_progressQueue.TryRemove(queueId, out _))
+            if (!_progressQueue.TryRemove(queueId, out var item))
             {
                 throw new Exception("Could not remove from queue");
             }
             UpdateProgressQueue();
+            return item;
         }
 
         public void ClearBacklog()
@@ -73,6 +76,72 @@ namespace AsyncCombinator.Queue
             {
                 Owner.MarkComplete(QueueId);
             }
+        }
+
+        public class ExecutorQueueEnumerator : IEnumerator<ExecutorQueueItem>
+        {
+            private IEnumerator<KeyValuePair<BigInteger, ExecutorQueueItem>> _progress;
+            private IEnumerator<ExecutorQueueItem> _backlog;
+            private bool _curr;
+            private readonly ExecutorQueue<T> _queue;
+
+            public ExecutorQueueEnumerator(ExecutorQueue<T> queue)
+            {
+                _curr = true;
+                _queue = queue;
+                _progress = queue._progressQueue.GetEnumerator();
+                _backlog = queue._backlogQueue.GetEnumerator();
+            }
+
+            public void Dispose()
+            {
+                _progress.Dispose();
+                _backlog.Dispose();
+            }
+
+            public bool MoveNext()
+            {
+                if (_curr && _progress.MoveNext())
+                    return true;
+                if (_curr)
+                    _curr = false;
+                return _backlog.MoveNext();
+            }
+
+            public void Reset()
+            {
+                _curr = true;
+                try
+                {
+                    _progress.Reset();
+                }
+                catch
+                {
+                    _progress = _queue._progressQueue.GetEnumerator();
+                }
+                try
+                {
+                    _backlog.Reset();
+                }
+                catch
+                {
+                    _backlog = _queue._backlogQueue.GetEnumerator();
+                }
+            }
+
+            public ExecutorQueueItem Current => _curr ? _progress.Current.Value : _backlog.Current;
+
+            object IEnumerator.Current => Current;
+        }
+
+        public IEnumerator<ExecutorQueueItem> GetEnumerator()
+        {
+            return new ExecutorQueueEnumerator(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

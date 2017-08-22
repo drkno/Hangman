@@ -79,7 +79,7 @@ namespace AsyncCombinator.Instance.NamedPipe.Client
 
             return taskCompletionSource.Task;
         }
-
+        
         #endregion
 
 

@@ -50,6 +50,7 @@
     <Compile Include="Instance\NamedPipe\Interfaces\ICommunication.cs" />
     <Compile Include="Instance\NamedPipe\Interfaces\ICommunicationClient.cs" />
     <Compile Include="Instance\NamedPipe\Interfaces\ICommunicationServer.cs" />
+    <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Instance\NamedPipe\Server\InternalPipeServer.cs" />
