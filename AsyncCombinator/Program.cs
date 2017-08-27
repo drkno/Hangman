@@ -86,8 +86,6 @@ namespace AsyncCombinator
             var cliArgs = args.Take(i);
             Stream memStream = new MemoryStream();
             var sw = new StreamWriter(memStream);
-            StreamReader sr;
-            string end;
             var cliOptions = new OptionSet
             {
                 {"c|clear", "Clear the current work backlog.", _ => ClearBacklog(ref sw)},
@@ -99,24 +97,18 @@ namespace AsyncCombinator
             try
             {
                 cliOptions.ParseExceptionally(cliArgs);
+                args = args.Skip(i).Take(args.Length - i + 1).ToArray();
             }
             catch
             {
                 cliOptions.ShowHelp(Process.GetCurrentProcess().ProcessName, "A parallel command executor which does not block", "", "", "Matthew Knox", "https://github.com/mrkno/Hangman/issues", "Copyright " + DateTime.Now.Year + " (c) Matthew Knox", false, ref sw);
                 args = new string[] { };
-
-                memStream.Position = 0;
-                sr = new StreamReader(memStream);
-                end = sr.ReadToEnd();
-                sr.Close();
-                return end;
             }
 
-            args = args.Skip(i).Take(args.Length - i + 1).ToArray();
-
+            sw.Flush();
             memStream.Position = 0;
-            sr = new StreamReader(memStream);
-            end = sr.ReadToEnd();
+            var sr = new StreamReader(memStream);
+            var end = sr.ReadToEnd();
             sr.Close();
             return end;
         }
@@ -147,7 +139,7 @@ namespace AsyncCombinator
             {
                 _commandQueue.Enqueue(new Command(args, workingDirectory, environment));
             }
-            return "hello world";
+            return inst;
         }
     }
 }
