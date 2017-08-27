@@ -168,7 +168,10 @@ namespace AsyncCombinator.Instance.NamedPipe.Server
         /// </summary>
         private void OnMessageReceived(string message)
         {
-            MessageReceivedEvent?.Invoke(this, new MessageReceivedEventArgs {Message = message});
+            MessageReceivedEvent?.Invoke(this, new MessageReceivedEventArgs {Message = message, SendMessage = bytes =>
+            {
+                _pipeServer.Write(bytes, 0, bytes.Length);
+            }});
         }
 
         /// <summary>

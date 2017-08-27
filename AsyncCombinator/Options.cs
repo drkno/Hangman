@@ -17,6 +17,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -279,108 +280,86 @@ namespace AsyncCombinator
             string programAuthor,
             string programReportBugs,
             string programCopyright,
-            bool confirm)
+            bool confirm,
+            ref StreamWriter stream)
         {
-            WriteProgramName(programNameDescription);
-            WriteProgramSynopsis(programSynopsis);
-            WriteOptionDescriptions(this, optionDescriptionPrefix, optionDescriptionPostfix);
-            WriteProgramAuthor(programAuthor);
-            WriteProgramReportingBugs(programReportBugs);
-            WriteProgramCopyrightLicense(programCopyright);
+            var textWriter = stream ?? Console.Out;
 
-            if (confirm)
-            {
-                Console.ReadKey(true);
-            }
+            WriteProgramName(programNameDescription, ref textWriter);
+            WriteProgramSynopsis(programSynopsis, ref textWriter);
+            WriteOptionDescriptions(this, optionDescriptionPrefix, optionDescriptionPostfix, ref textWriter);
+            WriteProgramAuthor(programAuthor, ref textWriter);
+            WriteProgramReportingBugs(programReportBugs, ref textWriter);
+            WriteProgramCopyrightLicense(programCopyright, ref textWriter);
         }
 
         /// <summary>
         /// Print program name and description.
         /// </summary>
         /// <param name="description">Description to print.</param>
-        private static void WriteProgramName(string description)
+        private static void WriteProgramName(string description, ref TextWriter writer)
         {
-            var origColour = Console.ForegroundColor;
             var appName = AppDomain.CurrentDomain.FriendlyName;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("NAME");
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine('\t' + appName + " - " + description + '\n');
-            Console.ForegroundColor = origColour;
+            writer.WriteLine("NAME");
+            writer.WriteLine('\t' + appName + " - " + description + '\n');
         }
 
         /// <summary>
         /// Print the program synopsis.
         /// </summary>
         /// <param name="synopsis">Synopsis to print.</param>
-        private static void WriteProgramSynopsis(string synopsis)
+        private static void WriteProgramSynopsis(string synopsis, ref TextWriter writer)
         {
-            var origColour = Console.ForegroundColor;
             var appName = AppDomain.CurrentDomain.FriendlyName;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("SYNOPSIS");
-            Console.ForegroundColor = ConsoleColor.Gray;
+            writer.WriteLine("SYNOPSIS");
             synopsis = synopsis.Replace("{appName}", appName);
-            Console.WriteLine('\t' + synopsis + '\n');
-            Console.ForegroundColor = origColour;
+            writer.WriteLine('\t' + synopsis + '\n');
         }
 
         /// <summary>
         /// Print the program author.
         /// </summary>
         /// <param name="authorByString">Author string to print.</param>
-        private static void WriteProgramAuthor(string authorByString)
+        private static void WriteProgramAuthor(string authorByString, ref TextWriter writer)
         {
-            var origColour = Console.ForegroundColor;
             var appName = AppDomain.CurrentDomain.FriendlyName;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("AUTHOR");
-            Console.ForegroundColor = ConsoleColor.Gray;
+            writer.WriteLine("AUTHOR");
             authorByString = authorByString.Replace("{appName}", appName);
-            Console.WriteLine('\t' + authorByString + '\n');
-            Console.ForegroundColor = origColour;
+            writer.WriteLine('\t' + authorByString + '\n');
         }
 
         /// <summary>
         /// Print the program reporting bugs section.
         /// </summary>
         /// <param name="reportString">Report bugs string.</param>
-        private static void WriteProgramReportingBugs(string reportString)
+        private static void WriteProgramReportingBugs(string reportString, ref TextWriter writer)
         {
-            var origColour = Console.ForegroundColor;
             var appName = AppDomain.CurrentDomain.FriendlyName;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("REPORTING BUGS");
-            Console.ForegroundColor = ConsoleColor.Gray;
+            writer.WriteLine("REPORTING BUGS");
             reportString = reportString.Replace("{appName}", appName);
             var spl = reportString.Split(new[] { "\n", "\r\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var s in spl)
             {
-                Console.WriteLine('\t' + s);
+                writer.WriteLine('\t' + s);
             }
-            Console.WriteLine();
-            Console.ForegroundColor = origColour;
+            writer.WriteLine();
         }
 
         /// <summary>
         /// Print the program copyright license.
         /// </summary>
         /// <param name="copyrightLicense">Copyright license text.</param>
-        private static void WriteProgramCopyrightLicense(string copyrightLicense)
+        private static void WriteProgramCopyrightLicense(string copyrightLicense, ref TextWriter writer)
         {
-            var origColour = Console.ForegroundColor;
             var appName = AppDomain.CurrentDomain.FriendlyName;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("COPYRIGHT");
-            Console.ForegroundColor = ConsoleColor.Gray;
+            writer.WriteLine("COPYRIGHT");
             copyrightLicense = copyrightLicense.Replace("{appName}", appName);
             var spl = copyrightLicense.Split(new[] { "\n", "\r\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var s in spl)
             {
-                Console.WriteLine('\t' + s);
+                writer.WriteLine('\t' + s);
             }
-            Console.WriteLine();
-            Console.ForegroundColor = origColour;
+            writer.WriteLine();
         }
 
         /// <summary>
@@ -389,54 +368,50 @@ namespace AsyncCombinator
         /// <param name="os">OptionsSet to use options from.</param>
         /// <param name="prefixText">Text to print before options.</param>
         /// <param name="postText">Text to print after options.</param>
-        private static void WriteOptionDescriptions(OptionSet os, string prefixText, string postText)
+        private static void WriteOptionDescriptions(OptionSet os, string prefixText, string postText, ref TextWriter writer)
         {
-            var origColour = Console.ForegroundColor;
             var appName = AppDomain.CurrentDomain.FriendlyName;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("DESCRIPTION");
-            Console.ForegroundColor = ConsoleColor.Gray;
+            writer.WriteLine("DESCRIPTION");
             if (!string.IsNullOrWhiteSpace(prefixText))
             {
                 prefixText = prefixText.Replace("{appName}", appName);
                 var spl = prefixText.Split(new[] { "\n", "\r\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var s in spl)
                 {
-                    Console.WriteLine('\t' + s);
+                    writer.WriteLine('\t' + s);
                 }
             }
 
-            var buffWid = Console.BufferWidth;
+            var buffWid = writer == null ? Console.BufferWidth : 120;
             foreach (var p in os._options)
             {
-                Console.Write('\t');
+                writer.Write('\t');
                 for (var j = 0; j < p.Arguments.Length; j++)
                 {
-                    Console.Write(p.Arguments[j]);
+                    writer.Write(p.Arguments[j]);
                     if (j + 1 != p.Arguments.Length)
                     {
-                        Console.Write(", ");
+                        writer.Write(", ");
                     }
                     else
                     {
                         if (p.Options.Length > 0)
                         {
-                            Console.Write('\t');
+                            writer.Write('\t');
                             foreach (var t in p.Options)
                             {
-                                Console.Write(" [" + t + "]");
+                                writer.Write(" [" + t + "]");
                             }
                         }
 
-                        Console.WriteLine();
+                        writer.WriteLine();
                     }
                 }
 
-                Console.Write("\t\t");
-                var len = buffWid - Console.CursorLeft;
+                writer.Write("\t\t");
+                var len = buffWid - (writer == null ? Console.CursorLeft : 0);
 
-                foreach (var l in p.Description.Split(new[] { "\n", "\r\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
-                )
+                foreach (var l in p.Description.Split(new[] { "\n", "\r\n", "\r" }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     var lenP = 0;
                     foreach (var w in l.Split(' '))
@@ -445,21 +420,21 @@ namespace AsyncCombinator
 
                         if (lenP != 0 && (lenP + word.Length + 1) > len)
                         {
-                            if (lenP != len) Console.Write("\n");
-                            Console.Write("\t\t");
+                            if (lenP != len) writer.Write("\n");
+                            writer.Write("\t\t");
                             lenP = 0;
                         }
                         else if (lenP != 0)
                         {
                             word = ' ' + word;
                         }
-                        Console.Write(word);
+                        writer.Write(word);
                         lenP += word.Length;
                     }
-                    if (lenP != len) Console.Write("\n");
-                    Console.Write("\t\t");
+                    if (lenP != len) writer.Write("\n");
+                    writer.Write("\t\t");
                 }
-                Console.WriteLine();
+                writer.WriteLine();
             }
 
             if (!string.IsNullOrWhiteSpace(postText))
@@ -468,11 +443,10 @@ namespace AsyncCombinator
                 var spl = postText.Split(new[] { "\n", "\r\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var s in spl)
                 {
-                    Console.WriteLine('\t' + s);
+                    writer.WriteLine('\t' + s);
                 }
             }
-            Console.WriteLine();
-            Console.ForegroundColor = origColour;
+            writer.WriteLine();
         }
         #endregion
     }

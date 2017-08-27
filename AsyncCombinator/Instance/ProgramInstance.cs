@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncCombinator.Instance.NamedPipe.Client;
@@ -17,7 +18,7 @@ namespace AsyncCombinator.Instance
         private static readonly ProgramInstance ProgInstance = new Program();
 
         protected abstract void RunMain(string[] args);
-        protected abstract void NewInstance(string[] args, string workingDirectory, IDictionary<string, string> environment);
+        protected abstract string NewInstance(string[] args, string workingDirectory, IDictionary<string, string> environment);
 
         private static void ExtractAndPushInstance(object sender, MessageReceivedEventArgs e)
         {
@@ -36,7 +37,18 @@ namespace AsyncCombinator.Instance
             {
                 dic[envVars[i]] = envVars[i + 1];
             }
-            ProgInstance.NewInstance(cliArguments, workingDir, dic);
+            var res = ProgInstance.NewInstance(cliArguments, workingDir, dic);
+            var ress = Encoding.UTF8.GetBytes(res);
+            var buff = new byte[4096];
+            for (var i = 0; i < ress.Length; i++)
+            {
+                buff[i] = ress[i];
+            }
+            for (var i = ress.Length; i < 4096; i++)
+            {
+                buff[i] = 0x0;
+            }
+            e.SendMessage(buff);
         }
 
         private static void MainProcess(string[] args)
@@ -68,7 +80,13 @@ namespace AsyncCombinator.Instance
                 str.Add(key);
                 str.Add(Environment.GetEnvironmentVariable(key));
             }
-            Task.Run(() => pipeClient.SendMessage($"{string.Join("\0", args)}\0\0{Environment.CurrentDirectory}\0\0{string.Join("\0", str)}")).Wait();
+            Task.Run(async() =>
+            {
+                var message = $"{string.Join("\0", args)}\0\0{Environment.CurrentDirectory}\0\0{string.Join("\0", str)}";
+                await pipeClient.SendMessage(message);
+                var response = await pipeClient.Receive();
+                Console.WriteLine(response);
+            }).Wait();
             pipeClient.Stop();
         }
 

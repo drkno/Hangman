@@ -12,8 +12,18 @@ namespace AsyncCombinator.Queue
         private readonly ConcurrentDictionary<BigInteger, ExecutorQueueItem> _progressQueue;
 
         private BigInteger _uniqueProgressIdBase;
+        private int _maximumParallelExecutions;
         public event EventHandler<ExecutorQueueItem> ShouldExecute;
-        public int MaximumParallelExecutions { get; set; }
+
+        public int MaximumParallelExecutions
+        {
+            get => _maximumParallelExecutions;
+            set
+            {
+                _maximumParallelExecutions = value;
+                UpdateProgressQueue();
+            }
+        }
 
         public ExecutorQueue(int maximumParallelExecutions = 4)
         {

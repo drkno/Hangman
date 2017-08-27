@@ -38,5 +38,6 @@ namespace AsyncCombinator.Instance.NamedPipe.Interfaces
     public class MessageReceivedEventArgs : EventArgs
     {
         public string Message { get; set; }
+        public Action<byte[]> SendMessage { get; set; }
     }
 }

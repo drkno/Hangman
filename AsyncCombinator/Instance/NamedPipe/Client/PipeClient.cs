@@ -80,8 +80,34 @@ namespace AsyncCombinator.Instance.NamedPipe.Client
             return taskCompletionSource.Task;
         }
         
-        #endregion
+        public Task<string> Receive()
+        {
+            var taskCompletionSource = new TaskCompletionSource<string>();
+            if (_pipeClient.IsConnected)
+            {
+                var buffer = new byte[4096];
+                _pipeClient.BeginRead(buffer, 0, 4096, asyncResult =>
+                {
+                    try
+                    {
+                        _pipeClient.EndRead(asyncResult);
+                        _pipeClient.Flush();
+                        taskCompletionSource.SetResult(Encoding.UTF8.GetString(buffer).Trim('\0', ' ', '\t', '\n'));
+                    }
+                    catch (Exception ex)
+                    {
+                        taskCompletionSource.SetException(ex);
+                    }
+                }, taskCompletionSource);
+            }
+            else
+            {
+                throw new IOException("pipe is not connected");
+            }
+            return taskCompletionSource.Task;
+        }
 
+        #endregion
 
         #region private methods
 

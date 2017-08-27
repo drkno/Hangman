@@ -31,7 +31,7 @@ namespace AsyncCombinator
             return combinations.FirstOrDefault(File.Exists);
         }
 
-        private void List(string _)
+        private void List(ref StreamWriter writer)
         {
             var ids = new List<string>();
             var status = new List<string>();
@@ -47,15 +47,33 @@ namespace AsyncCombinator
             var statWid = Math.Max(status.Count > 0 ? status.Max(stat => stat.Length) + 1 : 20, 20);
             var jobWid = Math.Max(jobs.Count > 0 ? jobs.Max(job => job.Length) + 1 : 20, 20);
 
-            Console.WriteLine("Id".PadRight(idWid, ' ') + "Status".PadRight(statWid, ' ') + "Job".PadRight(jobWid, ' '));
-            Console.WriteLine(new string('-', idWid + jobWid + statWid));
+            writer.WriteLine("Id".PadRight(idWid, ' ') + "Status".PadRight(statWid, ' ') + "Job".PadRight(jobWid, ' '));
+            writer.WriteLine(new string('-', idWid + jobWid + statWid));
             for (var i = 0; i < ids.Count; i++)
             {
-                Console.WriteLine(ids[i].PadRight(idWid, ' ') + status[i].PadRight(statWid, ' ') + jobs[i].PadRight(jobWid, ' '));
+                writer.WriteLine(ids[i].PadRight(idWid, ' ') + status[i].PadRight(statWid, ' ') + jobs[i].PadRight(jobWid, ' '));
             }
         }
 
-        private void ProcessCliArguments(ref string[] args)
+        private void ClearBacklog(ref StreamWriter writer)
+        {
+            _commandQueue.ClearBacklog();
+            writer.WriteLine("Backlog Cleared");
+        }
+
+        private void Kill(ref StreamWriter writer, string id)
+        {
+            _commandQueue.MarkComplete(BigInteger.Parse(id)).Item.Kill();
+            writer.WriteLine($"Killed {id}.");
+        }
+
+        private void SetMax(ref StreamWriter writer, string max)
+        {
+            _commandQueue.MaximumParallelExecutions = int.Parse(max);
+            writer.WriteLine($"Maximum jobs set to {max}.");
+        }
+
+        private string ProcessCliArguments(ref string[] args)
         {
             var i = 0;
             for (; i < args.Length; i++)
@@ -66,12 +84,16 @@ namespace AsyncCombinator
                 }
             }
             var cliArgs = args.Take(i);
+            Stream memStream = new MemoryStream();
+            var sw = new StreamWriter(memStream);
+            StreamReader sr;
+            string end;
             var cliOptions = new OptionSet
             {
-                {"c|clear", "Clear the current work backlog.", _ => _commandQueue.ClearBacklog()},
-                {"k|kill", "Kill a currently in-progress item. This may have side affects.", id => _commandQueue.MarkComplete(BigInteger.Parse(id)).Item.Kill()},
-                {"l|list", "List all backlog and in-progress jobs.", List},
-                {"m|max", "Set the maximum number of parallel jobs", max => _commandQueue.MaximumParallelExecutions = int.Parse(max)}
+                {"c|clear", "Clear the current work backlog.", _ => ClearBacklog(ref sw)},
+                {"k|kill", "Kill a currently in-progress item. This may have side affects.", id => Kill(ref sw, id)},
+                {"l|list", "List all backlog and in-progress jobs.", _ => List(ref sw)},
+                {"m|max", "Set the maximum number of parallel jobs", max => SetMax(ref sw, max)}
             };
 
             try
@@ -80,12 +102,23 @@ namespace AsyncCombinator
             }
             catch
             {
-                cliOptions.ShowHelp(Process.GetCurrentProcess().ProcessName, "A parallel command executor which does not block", "", "", "Matthew Knox", "https://github.com/mrkno/Hangman/issues", "Copyright " + DateTime.Now.Year + " (c) Matthew Knox", false);
+                cliOptions.ShowHelp(Process.GetCurrentProcess().ProcessName, "A parallel command executor which does not block", "", "", "Matthew Knox", "https://github.com/mrkno/Hangman/issues", "Copyright " + DateTime.Now.Year + " (c) Matthew Knox", false, ref sw);
                 args = new string[] { };
-                return;
+
+                memStream.Position = 0;
+                sr = new StreamReader(memStream);
+                end = sr.ReadToEnd();
+                sr.Close();
+                return end;
             }
 
             args = args.Skip(i).Take(args.Length - i + 1).ToArray();
+
+            memStream.Position = 0;
+            sr = new StreamReader(memStream);
+            end = sr.ReadToEnd();
+            sr.Close();
+            return end;
         }
 
         protected override void RunMain(string[] args)
@@ -93,7 +126,7 @@ namespace AsyncCombinator
             _commandQueue = new ExecutorQueue<Command>();
             _commandQueue.ShouldExecute += CommandShouldExecute;
 
-            ProcessCliArguments(ref args);
+            Console.WriteLine(ProcessCliArguments(ref args));
             if (args.Length > 0)
             {
                 throw new Exception("Did not handle all CLI arguments.");
@@ -107,13 +140,14 @@ namespace AsyncCombinator
             e.Item.BeginExecute();
         }
 
-        protected override void NewInstance(string[] args, string workingDirectory, IDictionary<string, string> environment)
+        protected override string NewInstance(string[] args, string workingDirectory, IDictionary<string, string> environment)
         {
-            ProcessCliArguments(ref args);
-            if (args.Length > 0)
+            var inst = ProcessCliArguments(ref args);
+            if (inst.Length == 0 && args.Length > 0)
             {
                 _commandQueue.Enqueue(new Command(args, workingDirectory, environment));
             }
+            return "hello world";
         }
     }
 }
