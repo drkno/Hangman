@@ -262,32 +262,30 @@ namespace AsyncCombinator
         }
 
         #region Help Text
+
         /// <summary>
         /// Print help.
         /// </summary>
         /// <param name="programNameDescription">Decription to accompany the program name.</param>
         /// <param name="programSynopsis">Synopsis section of the help.</param>
-        /// <param name="optionDescriptionPrefix">Text before options.</param>
-        /// <param name="optionDescriptionPostfix">Text after options.</param>
         /// <param name="programAuthor">Author section of the help.</param>
         /// <param name="programReportBugs">Bugs section of the help.</param>
         /// <param name="programCopyright">Copyright section of the help.</param>
         /// <param name="confirm">Halt before continuing execution after printing.</param>
+        /// <param name="writer">The writer to write using.</param>
         public void ShowHelp(string programNameDescription,
             string programSynopsis,
-            string optionDescriptionPrefix,
-            string optionDescriptionPostfix,
             string programAuthor,
             string programReportBugs,
             string programCopyright,
             bool confirm,
-            ref StreamWriter stream)
+            TextWriter writer)
         {
-            var textWriter = stream ?? Console.Out;
+            var textWriter = writer ?? Console.Out;
 
             WriteProgramName(programNameDescription, ref textWriter);
             WriteProgramSynopsis(programSynopsis, ref textWriter);
-            WriteOptionDescriptions(this, optionDescriptionPrefix, optionDescriptionPostfix, ref textWriter);
+            WriteOptionDescriptions(this, ref textWriter);
             WriteProgramAuthor(programAuthor, ref textWriter);
             WriteProgramReportingBugs(programReportBugs, ref textWriter);
             WriteProgramCopyrightLicense(programCopyright, ref textWriter);
@@ -297,6 +295,7 @@ namespace AsyncCombinator
         /// Print program name and description.
         /// </summary>
         /// <param name="description">Description to print.</param>
+        /// <param name="writer">The writer to write using.</param>
         private static void WriteProgramName(string description, ref TextWriter writer)
         {
             var appName = AppDomain.CurrentDomain.FriendlyName;
@@ -308,6 +307,7 @@ namespace AsyncCombinator
         /// Print the program synopsis.
         /// </summary>
         /// <param name="synopsis">Synopsis to print.</param>
+        /// <param name="writer">The writer to write using.</param>
         private static void WriteProgramSynopsis(string synopsis, ref TextWriter writer)
         {
             var appName = AppDomain.CurrentDomain.FriendlyName;
@@ -320,6 +320,7 @@ namespace AsyncCombinator
         /// Print the program author.
         /// </summary>
         /// <param name="authorByString">Author string to print.</param>
+        /// <param name="writer">The writer to write using.</param>
         private static void WriteProgramAuthor(string authorByString, ref TextWriter writer)
         {
             var appName = AppDomain.CurrentDomain.FriendlyName;
@@ -332,6 +333,7 @@ namespace AsyncCombinator
         /// Print the program reporting bugs section.
         /// </summary>
         /// <param name="reportString">Report bugs string.</param>
+        /// <param name="writer">The writer to write using.</param>
         private static void WriteProgramReportingBugs(string reportString, ref TextWriter writer)
         {
             var appName = AppDomain.CurrentDomain.FriendlyName;
@@ -349,6 +351,7 @@ namespace AsyncCombinator
         /// Print the program copyright license.
         /// </summary>
         /// <param name="copyrightLicense">Copyright license text.</param>
+        /// <param name="writer">The writer to write using.</param>
         private static void WriteProgramCopyrightLicense(string copyrightLicense, ref TextWriter writer)
         {
             var appName = AppDomain.CurrentDomain.FriendlyName;
@@ -366,22 +369,10 @@ namespace AsyncCombinator
         /// Prints all the options in an OptionsSet and prefix/postfix text for the description.
         /// </summary>
         /// <param name="os">OptionsSet to use options from.</param>
-        /// <param name="prefixText">Text to print before options.</param>
-        /// <param name="postText">Text to print after options.</param>
-        private static void WriteOptionDescriptions(OptionSet os, string prefixText, string postText, ref TextWriter writer)
+        /// <param name="writer">The writer to write using.</param>
+        private static void WriteOptionDescriptions(OptionSet os, ref TextWriter writer)
         {
-            var appName = AppDomain.CurrentDomain.FriendlyName;
             writer.WriteLine("DESCRIPTION");
-            if (!string.IsNullOrWhiteSpace(prefixText))
-            {
-                prefixText = prefixText.Replace("{appName}", appName);
-                var spl = prefixText.Split(new[] { "\n", "\r\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var s in spl)
-                {
-                    writer.WriteLine('\t' + s);
-                }
-            }
-
             var buffWid = writer == null ? Console.BufferWidth : 120;
             foreach (var p in os._options)
             {
@@ -435,16 +426,6 @@ namespace AsyncCombinator
                     writer.Write("\t\t");
                 }
                 writer.WriteLine();
-            }
-
-            if (!string.IsNullOrWhiteSpace(postText))
-            {
-                postText = postText.Replace("{appName}", appName);
-                var spl = postText.Split(new[] { "\n", "\r\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var s in spl)
-                {
-                    writer.WriteLine('\t' + s);
-                }
             }
             writer.WriteLine();
         }
