@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace AsyncCombinator.Instance.NamedPipe.Interfaces
 {
@@ -38,5 +39,7 @@ namespace AsyncCombinator.Instance.NamedPipe.Interfaces
     public class MessageReceivedEventArgs : EventArgs
     {
         public string Message { get; set; }
+        public TextWriter Writer { get; set; }
+        public Action Flush { get; set; }
     }
 }

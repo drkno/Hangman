@@ -4,15 +4,16 @@ using System.IO.Pipes;
 using System.Text;
 using System.Threading.Tasks;
 using AsyncCombinator.Instance.NamedPipe.Interfaces;
-using AsyncCombinator.Instance.NamedPipe.Utilities;
 
 namespace AsyncCombinator.Instance.NamedPipe.Client
 {
-    public class PipeClient : ICommunicationClient
+    public class PipeClient : ICommunication
     {
         #region private fields
 
         private readonly NamedPipeClientStream _pipeClient;
+        public TextReader Reader { get; }
+        public TextWriter Writer { get; }
 
         #endregion
 
@@ -21,6 +22,8 @@ namespace AsyncCombinator.Instance.NamedPipe.Client
         public PipeClient(string serverId)
         {
             _pipeClient = new NamedPipeClientStream(".", serverId, PipeDirection.InOut, PipeOptions.Asynchronous);
+            Reader = new StreamReader(_pipeClient);
+            Writer = new StreamWriter(_pipeClient);
         }
 
         #endregion
@@ -32,8 +35,7 @@ namespace AsyncCombinator.Instance.NamedPipe.Client
         /// </summary>
         public void Start()
         {
-            const int tryConnectTimeout = 5*60*1000; // 5 minutes
-            _pipeClient.Connect(tryConnectTimeout);
+            _pipeClient.Connect((int) TimeSpan.FromMinutes(5).TotalMilliseconds);
         }
 
         /// <summary>
@@ -52,50 +54,36 @@ namespace AsyncCombinator.Instance.NamedPipe.Client
             }
         }
 
-        public Task<TaskResult> SendMessage(string message)
+        public Task SendMessage(string message)
         {
-            var taskCompletionSource = new TaskCompletionSource<TaskResult>();
-
+            return Writer.WriteAsync(message);
+        }
+        
+        public Task<string> Receive()
+        {
+            var taskCompletionSource = new TaskCompletionSource<string>();
             if (_pipeClient.IsConnected)
             {
-                var buffer = Encoding.UTF8.GetBytes(message);
-                _pipeClient.BeginWrite(buffer, 0, buffer.Length, asyncResult =>
+                var buffer = new byte[1];
+                _pipeClient.BeginRead(buffer, 0, 1, asyncResult =>
                 {
                     try
                     {
-                        taskCompletionSource.SetResult(EndWriteCallBack(asyncResult));
+                        _pipeClient.EndRead(asyncResult);
+                        _pipeClient.Flush();
+                        taskCompletionSource.SetResult(Encoding.UTF8.GetString(buffer) + Reader.ReadToEnd());
                     }
                     catch (Exception ex)
                     {
                         taskCompletionSource.SetException(ex);
                     }
-
-                }, null);
+                }, taskCompletionSource);
             }
             else
             {
                 throw new IOException("pipe is not connected");
             }
-
             return taskCompletionSource.Task;
-        }
-        
-        #endregion
-
-
-        #region private methods
-
-        /// <summary>
-        /// This callback is called when the BeginWrite operation is completed.
-        /// It can be called whether the connection is valid or not.
-        /// </summary>
-        /// <param name="asyncResult"></param>
-        private TaskResult EndWriteCallBack(IAsyncResult asyncResult)
-        {
-            _pipeClient.EndWrite(asyncResult);
-            _pipeClient.Flush();
-
-            return new TaskResult {IsSuccess = true};
         }
 
         #endregion

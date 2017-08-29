@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncCombinator.Instance.NamedPipe.Client;
@@ -16,8 +17,18 @@ namespace AsyncCombinator.Instance
         private static PipeServer _pipeServer;
         private static readonly ProgramInstance ProgInstance = new Program();
 
-        protected abstract void RunMain(string[] args);
-        protected abstract void NewInstance(string[] args, string workingDirectory, IDictionary<string, string> environment);
+        protected abstract void RunMain(string[] args, string workingDirectory, IDictionary<string, string> environment);
+        protected abstract void NewInstance(string[] args, string workingDirectory, IDictionary<string, string> environment, TextWriter console);
+
+        private static void GetEnvironmentData(out string workingDir, out Dictionary<string, string> envVars)
+        {
+            workingDir = Environment.CurrentDirectory;
+            envVars = new Dictionary<string, string>();
+            foreach (string key in Environment.GetEnvironmentVariables().Keys)
+            {
+                envVars.Add(key, Environment.GetEnvironmentVariable(key));
+            }
+        }
 
         private static void ExtractAndPushInstance(object sender, MessageReceivedEventArgs e)
         {
@@ -36,7 +47,8 @@ namespace AsyncCombinator.Instance
             {
                 dic[envVars[i]] = envVars[i + 1];
             }
-            ProgInstance.NewInstance(cliArguments, workingDir, dic);
+            ProgInstance.NewInstance(cliArguments, workingDir, dic, e.Writer);
+            e.Flush();
         }
 
         private static void MainProcess(string[] args)
@@ -44,7 +56,8 @@ namespace AsyncCombinator.Instance
             _pipeServer = new PipeServer(ProgramName);
             _pipeServer.MessageReceivedEvent += ExtractAndPushInstance;
             _pipeServer.Start();
-            ProgInstance.RunMain(args);
+            GetEnvironmentData(out string workingDir, out Dictionary<string, string> envVars);
+            ProgInstance.RunMain(args, workingDir, envVars);
         }
 
         public static void ExitProcess()
@@ -68,8 +81,13 @@ namespace AsyncCombinator.Instance
                 str.Add(key);
                 str.Add(Environment.GetEnvironmentVariable(key));
             }
-            Task.Run(() => pipeClient.SendMessage($"{string.Join("\0", args)}\0\0{Environment.CurrentDirectory}\0\0{string.Join("\0", str)}")).Wait();
-            pipeClient.Stop();
+            Task.Run(async() =>
+            {
+                var message = $"{string.Join("\0", args)}\0\0{Environment.CurrentDirectory}\0\0{string.Join("\0", str)}";
+                await pipeClient.SendMessage(message);
+                var response = await pipeClient.Receive();
+                Console.Write(response);
+            }).Wait();
         }
 
         public static void Main(string[] args)
