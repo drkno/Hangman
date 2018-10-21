@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Hangman.Instance.NamedPipe.Client;
@@ -17,8 +17,18 @@ namespace Hangman.Instance
         private static PipeServer _pipeServer;
         private static readonly ProgramInstance ProgInstance = new Program();
 
-        protected abstract void RunMain(string[] args);
-        protected abstract string NewInstance(string[] args, string workingDirectory, IDictionary<string, string> environment);
+        protected abstract void RunMain(string[] args, string workingDirectory, IDictionary<string, string> environment);
+        protected abstract void NewInstance(string[] args, string workingDirectory, IDictionary<string, string> environment, TextWriter console);
+
+        private static void GetEnvironmentData(out string workingDir, out Dictionary<string, string> envVars)
+        {
+            workingDir = Environment.CurrentDirectory;
+            envVars = new Dictionary<string, string>();
+            foreach (string key in Environment.GetEnvironmentVariables().Keys)
+            {
+                envVars.Add(key, Environment.GetEnvironmentVariable(key));
+            }
+        }
 
         private static void ExtractAndPushInstance(object sender, MessageReceivedEventArgs e)
         {
@@ -37,18 +47,8 @@ namespace Hangman.Instance
             {
                 dic[envVars[i]] = envVars[i + 1];
             }
-            var res = ProgInstance.NewInstance(cliArguments, workingDir, dic);
-            var ress = Encoding.UTF8.GetBytes(res);
-            var buff = new byte[4096];
-            for (var i = 0; i < ress.Length; i++)
-            {
-                buff[i] = ress[i];
-            }
-            for (var i = ress.Length; i < 4096; i++)
-            {
-                buff[i] = 0x0;
-            }
-            e.SendMessage(buff);
+            ProgInstance.NewInstance(cliArguments, workingDir, dic, e.Writer);
+            e.Flush();
         }
 
         private static void MainProcess(string[] args)
@@ -56,7 +56,8 @@ namespace Hangman.Instance
             _pipeServer = new PipeServer(ProgramName);
             _pipeServer.MessageReceivedEvent += ExtractAndPushInstance;
             _pipeServer.Start();
-            ProgInstance.RunMain(args);
+            GetEnvironmentData(out string workingDir, out Dictionary<string, string> envVars);
+            ProgInstance.RunMain(args, workingDir, envVars);
         }
 
         public static void ExitProcess()
@@ -85,9 +86,8 @@ namespace Hangman.Instance
                 var message = $"{string.Join("\0", args)}\0\0{Environment.CurrentDirectory}\0\0{string.Join("\0", str)}";
                 await pipeClient.SendMessage(message);
                 var response = await pipeClient.Receive();
-                Console.WriteLine(response);
+                Console.Write(response);
             }).Wait();
-            pipeClient.Stop();
         }
 
         public static void Main(string[] args)

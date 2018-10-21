@@ -1,11 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.IO.Pipes;
 using System.Text;
 using Hangman.Instance.NamedPipe.Interfaces;
 
 namespace Hangman.Instance.NamedPipe.Server
 {
-    internal class InternalPipeServer : ICommunicationServer
+    internal class InternalPipeServer : ICommunicationServer, IDisposable
     {
         #region private fields
 
@@ -14,6 +15,7 @@ namespace Hangman.Instance.NamedPipe.Server
         private readonly object _lockingObject = new object();
         private const int BufferSize = 2048;
         public readonly string Id;
+        public TextWriter Writer { get; }
 
         private class Info
         {
@@ -37,6 +39,7 @@ namespace Hangman.Instance.NamedPipe.Server
         public InternalPipeServer(string pipeName)
         {
             _pipeServer = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 254, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
+            Writer = new StreamWriter(_pipeServer);
             Id = Guid.NewGuid().ToString();
         }
 
@@ -168,10 +171,7 @@ namespace Hangman.Instance.NamedPipe.Server
         /// </summary>
         private void OnMessageReceived(string message)
         {
-            MessageReceivedEvent?.Invoke(this, new MessageReceivedEventArgs {Message = message, SendMessage = bytes =>
-            {
-                _pipeServer.Write(bytes, 0, bytes.Length);
-            }});
+            MessageReceivedEvent?.Invoke(this, new MessageReceivedEventArgs {Message = message, Writer = Writer, Flush = Flush});
         }
 
         /// <summary>
@@ -191,5 +191,25 @@ namespace Hangman.Instance.NamedPipe.Server
         }
 
         #endregion
+
+        public void Flush()
+        {
+            Writer.Flush();
+            _pipeServer.Flush();
+            Stop();
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                Writer.Dispose();
+                _pipeServer.Dispose();
+            }
+            catch
+            {
+                // ignore, failures we dont care about (just trying to clean up nicely)
+            }
+        }
     }
 }

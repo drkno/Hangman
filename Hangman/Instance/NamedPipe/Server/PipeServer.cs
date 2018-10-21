@@ -72,7 +72,7 @@ namespace Hangman.Instance.NamedPipe.Server
                 _servers.Clear();
             }
         }
-
+        
         #endregion
 
         #region private methods
