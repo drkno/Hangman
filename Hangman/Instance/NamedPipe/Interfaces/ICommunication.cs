@@ -1,4 +1,4 @@
-﻿namespace AsyncCombinator.Instance.NamedPipe.Interfaces
+﻿namespace Hangman.Instance.NamedPipe.Interfaces
 {
     public interface ICommunication
     {

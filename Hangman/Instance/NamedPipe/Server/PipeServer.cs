@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
-using AsyncCombinator.Instance.NamedPipe.Interfaces;
+using Hangman.Instance.NamedPipe.Interfaces;
 
-namespace AsyncCombinator.Instance.NamedPipe.Server
+namespace Hangman.Instance.NamedPipe.Server
 {
     public class PipeServer : ICommunicationServer
     {

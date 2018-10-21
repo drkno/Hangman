@@ -5,10 +5,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using AsyncCombinator.Instance;
-using AsyncCombinator.Queue;
+using Hangman.Instance;
+using Hangman.Queue;
 
-namespace AsyncCombinator
+namespace Hangman
 {
     public class Program : ProgramInstance
     {

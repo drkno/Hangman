@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace AsyncCombinator.Queue
+namespace Hangman.Queue
 {
     public class Command
     {

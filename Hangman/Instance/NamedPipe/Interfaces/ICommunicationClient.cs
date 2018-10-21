@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using AsyncCombinator.Instance.NamedPipe.Utilities;
+using Hangman.Instance.NamedPipe.Utilities;
 
-namespace AsyncCombinator.Instance.NamedPipe.Interfaces
+namespace Hangman.Instance.NamedPipe.Interfaces
 {
     public interface ICommunicationClient : ICommunication
     {

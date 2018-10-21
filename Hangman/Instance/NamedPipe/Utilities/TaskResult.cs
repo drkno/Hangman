@@ -1,4 +1,4 @@
-﻿namespace AsyncCombinator.Instance.NamedPipe.Utilities
+﻿namespace Hangman.Instance.NamedPipe.Utilities
 {
     public class TaskResult
     {

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO.Pipes;
 using System.Text;
-using AsyncCombinator.Instance.NamedPipe.Interfaces;
+using Hangman.Instance.NamedPipe.Interfaces;
 
-namespace AsyncCombinator.Instance.NamedPipe.Server
+namespace Hangman.Instance.NamedPipe.Server
 {
     internal class InternalPipeServer : ICommunicationServer
     {

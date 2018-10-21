@@ -23,7 +23,7 @@ using System.Text.RegularExpressions;
 
 #endregion
 
-namespace AsyncCombinator
+namespace Hangman
 {
     /// <summary>
     /// Set of CLI interface
