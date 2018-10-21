@@ -4,11 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncCombinator.Instance.NamedPipe.Client;
-using AsyncCombinator.Instance.NamedPipe.Interfaces;
-using AsyncCombinator.Instance.NamedPipe.Server;
+using Hangman.Instance.NamedPipe.Client;
+using Hangman.Instance.NamedPipe.Interfaces;
+using Hangman.Instance.NamedPipe.Server;
 
-namespace AsyncCombinator.Instance
+namespace Hangman.Instance
 {
     public abstract class ProgramInstance
     {

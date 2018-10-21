@@ -3,9 +3,9 @@ using System.IO;
 using System.IO.Pipes;
 using System.Text;
 using System.Threading.Tasks;
-using AsyncCombinator.Instance.NamedPipe.Interfaces;
+using Hangman.Instance.NamedPipe.Interfaces;
 
-namespace AsyncCombinator.Instance.NamedPipe.Client
+namespace Hangman.Instance.NamedPipe.Client
 {
     public class PipeClient : ICommunication
     {

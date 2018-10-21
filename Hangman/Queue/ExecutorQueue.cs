@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace AsyncCombinator.Queue
+namespace Hangman.Queue
 {
     public class ExecutorQueue<T> : IEnumerable<ExecutorQueue<T>.ExecutorQueueItem>
     {
